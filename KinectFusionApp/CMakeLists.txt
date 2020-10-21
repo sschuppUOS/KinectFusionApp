@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.0)
 
-project(KinectFusionApp)
+project(kinfuApp)
 
 # Use modern C++
 set(CMAKE_CXX_STANDARD 14)
@@ -12,17 +12,17 @@ set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 #                 Dependencies
 # ------------------------------------------------
 ## CUDA
-find_package(CUDA 8.0 REQUIRED)
+find_package(CUDA 11.0 REQUIRED)
 IF (CUDA_FOUND)
     include_directories("${CUDA_INCLUDE_DIRS}")
     # Optional: Specify the arch of your CUDA hardware here
-    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3;-std=c++11 -gencode arch=compute_20,code=sm_21)
+    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3;-std=c++11 -gencode arch=compute_75,code=sm_75)
 ENDIF ()
 
 ## OpenCV
 # Optional: Set OpenCV_DIR if you want to use a custom version of OpenCV
-SET("OpenCV_DIR" "/opt/opencv/share/OpenCV")
-find_package(OpenCV 3.0 REQUIRED)
+# SET("OpenCV_DIR" "/opt/opencv/share/OpenCV")
+find_package(OpenCV 4.0 REQUIRED)
 if (OpenCV_INCLUDE_DIRS)
     include_directories("${OpenCV_INCLUDE_DIRS}")
     link_directories(${OpenCV_DIR}/lib)
@@ -43,7 +43,7 @@ endif (OPENNI2_FOUND)
 ## Intel RealSense
 find_package(realsense2 REQUIRED)
 if (realsense2_FOUND)
-    include_directories("${realsense_INCLUDE_DIR}")
+    include_directories("${realsense2_INCLUDE_DIR}")
 endif (realsense2_FOUND)
 # ------------------------------------------------
 
@@ -52,5 +52,5 @@ include_directories(${CMAKE_SOURCE_DIR}/KinectFusionLib/include)
 
 file(GLOB KinectFusionApp_SRCS ${PROJECT_SOURCE_DIR}/*.cpp)
 
-add_executable(KinectFusionApp ${KinectFusionApp_SRCS})
-target_link_libraries(KinectFusionApp ${OpenCV_LIBS} ${OPENNI2_LIBRARY} ${realsense2_LIBRARY} KinectFusion)
+add_executable(kinfuApp ${KinectFusionApp_SRCS})
+target_link_libraries(kinfuApp ${OpenCV_LIBS} ${OPENNI2_LIBRARY} ${realsense2_LIBRARY} KinectFusion)
