@@ -19,6 +19,11 @@ IF (CUDA_FOUND)
     SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3;-std=c++11 -gencode arch=compute_75,code=sm_75)
 ENDIF ()
 
+find_package(OpenCL REQUIRED)
+if (OpenCL_FOUND)
+    include_directories( ${OPENCL_INCLUDE_DIR} )
+endif ()
+
 ## OpenCV
 # Optional: Set OpenCV_DIR if you want to use a custom version of OpenCV
 # SET("OpenCV_DIR" "/opt/opencv/share/OpenCV")
@@ -53,4 +58,4 @@ include_directories(${CMAKE_SOURCE_DIR}/KinectFusionLib/include)
 file(GLOB KinectFusionApp_SRCS ${PROJECT_SOURCE_DIR}/*.cpp)
 
 add_executable(kinfuApp ${KinectFusionApp_SRCS})
-target_link_libraries(kinfuApp ${OpenCV_LIBS} ${OPENNI2_LIBRARY} ${realsense2_LIBRARY} KinectFusion)
+target_link_libraries(kinfuApp ${OpenCV_LIBS} ${OPENNI2_LIBRARY} ${realsense2_LIBRARY} ${OpenCL_LIBRARIES} KinectFusion)
