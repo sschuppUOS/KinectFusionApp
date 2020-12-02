@@ -11,18 +11,29 @@ set(PROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src)
 # ------------------------------------------------
 #                 Dependencies
 # ------------------------------------------------
+
+find_package(kinfulib REQUIRED)
+message(STATUS "OUTPUT")
+message(STATUS "${KINFULIB_INCLUDE_DIRS}")
+message(STATUS ${KINFULIB_INCLUDE_DIRS})
+message(STATUS ${KINFU_LIBRARIES})
+if(KINFU_FOUND)
+	message(STATUS "KINFU_FOUND")
+endif()
+message(STATUS "OUTPUT END")
+
 ## CUDA
-find_package(CUDA 11.0 REQUIRED)
+find_package(CUDA 10.0 REQUIRED)
 IF (CUDA_FOUND)
     include_directories("${CUDA_INCLUDE_DIRS}")
     # Optional: Specify the arch of your CUDA hardware here
-    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3;-std=c++11 -gencode arch=compute_75,code=sm_75)
+    SET(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS};-O3;-std=c++11 -gencode arch=compute_30,code=sm_30)
 ENDIF ()
 
 ## OpenCV
 # Optional: Set OpenCV_DIR if you want to use a custom version of OpenCV
 # SET("OpenCV_DIR" "/opt/opencv/share/OpenCV")
-find_package(OpenCV 4.0 REQUIRED)
+find_package(OpenCV 4.2 REQUIRED)
 if (OpenCV_INCLUDE_DIRS)
     include_directories("${OpenCV_INCLUDE_DIRS}")
     link_directories(${OpenCV_DIR}/lib)
@@ -48,9 +59,9 @@ endif (realsense2_FOUND)
 # ------------------------------------------------
 
 include_directories(${PROJECT_INCLUDE_DIR})
-include_directories(${CMAKE_SOURCE_DIR}/KinectFusionLib/include)
+# include_directories(${CMAKE_SOURCE_DIR}/KinectFusionLib/include)
 
 file(GLOB KinectFusionApp_SRCS ${PROJECT_SOURCE_DIR}/*.cpp)
 
 add_executable(kinfuApp ${KinectFusionApp_SRCS})
-target_link_libraries(kinfuApp ${OpenCV_LIBS} ${OPENNI2_LIBRARY} ${realsense2_LIBRARY} KinectFusion)
+target_link_libraries(kinfuApp ${OpenCV_LIBS} ${OPENNI2_LIBRARY} ${realsense2_LIBRARY} ${KINFU_LIBRARIES})

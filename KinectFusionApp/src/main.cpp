@@ -1,8 +1,11 @@
 
 #include <kinectfusion.h>
-#include <depth_camera.h>
-#include <util.h>
+// #include "std_msgs/String.h"
+#include <data_types.h>
 
+// #include <depth_camera.h>
+// #include "util.h"
+// #include "ros/ros.h"
 #include <iostream>
 #include <fstream>
 #include <iomanip>
@@ -14,135 +17,153 @@
 #include <opencv2/highgui.hpp>
 #pragma GCC diagnostic pop
 
-#include <cxxopts.hpp>
-#include <cpptoml.h>
+// #include <cxxopts.hpp>
+// #include <cpptoml.h>
 
 std::string data_path {};
 std::string recording_name {};
 
-auto make_configuration(const std::shared_ptr<cpptoml::table>& toml_config)
-{
-    kinectfusion::GlobalConfiguration configuration;
+// auto make_configuration(const std::shared_ptr<cpptoml::table>& toml_config)
+// {
+//     kinectfusion::GlobalConfiguration configuration;
 
-    // cpptoml only supports int64_t, so we need to explicitly cast to int to suppress the warning
-    auto volume_size_values = *toml_config->get_qualified_array_of<int64_t>("kinectfusion.volume_size");
-    configuration.volume_size = make_int3(static_cast<int>(volume_size_values[0]),
-                                          static_cast<int>(volume_size_values[1]),
-                                          static_cast<int>(volume_size_values[2]));
-    configuration.voxel_scale = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.voxel_scale"));
-    configuration.bfilter_kernel_size = *toml_config->get_qualified_as<int>("kinectfusion.bfilter_kernel_size");
-    configuration.bfilter_color_sigma  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.bfilter_color_sigma"));
-    configuration.bfilter_spatial_sigma  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.bfilter_spatial_sigma"));
-    configuration.init_depth  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.init_depth"));
-    configuration.use_output_frame = *toml_config->get_qualified_as<bool>("kinectfusion.use_output_frame");
-    configuration.truncation_distance  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.truncation_distance"));
-    configuration.depth_cutoff_distance  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.depth_cutoff_distance"));
-    configuration.num_levels  = *toml_config->get_qualified_as<int>("kinectfusion.num_levels");
-    configuration.triangles_buffer_size  = *toml_config->get_qualified_as<int>("kinectfusion.triangles_buffer_size");
-    configuration.pointcloud_buffer_size  = *toml_config->get_qualified_as<int>("kinectfusion.pointcloud_buffer_size");
-    configuration.distance_threshold  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.distance_threshold"));
-    configuration.angle_threshold  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.angle_threshold"));
-    auto icp_iterations_values = *toml_config->get_qualified_array_of<int64_t>("kinectfusion.icp_iterations");
-    configuration.icp_iterations = {icp_iterations_values.begin(), icp_iterations_values.end()};
+//     // cpptoml only supports int64_t, so we need to explicitly cast to int to suppress the warning
+//     auto volume_size_values = *toml_config->get_qualified_array_of<int64_t>("kinectfusion.volume_size");
+//     configuration.volume_size = make_int3(static_cast<int>(volume_size_values[0]),
+//                                           static_cast<int>(volume_size_values[1]),
+//                                           static_cast<int>(volume_size_values[2]));
+//     configuration.voxel_scale = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.voxel_scale"));
+//     configuration.bfilter_kernel_size = *toml_config->get_qualified_as<int>("kinectfusion.bfilter_kernel_size");
+//     configuration.bfilter_color_sigma  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.bfilter_color_sigma"));
+//     configuration.bfilter_spatial_sigma  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.bfilter_spatial_sigma"));
+//     configuration.init_depth  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.init_depth"));
+//     configuration.use_output_frame = *toml_config->get_qualified_as<bool>("kinectfusion.use_output_frame");
+//     configuration.truncation_distance  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.truncation_distance"));
+//     configuration.depth_cutoff_distance  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.depth_cutoff_distance"));
+//     configuration.num_levels  = *toml_config->get_qualified_as<int>("kinectfusion.num_levels");
+//     configuration.triangles_buffer_size  = *toml_config->get_qualified_as<int>("kinectfusion.triangles_buffer_size");
+//     configuration.pointcloud_buffer_size  = *toml_config->get_qualified_as<int>("kinectfusion.pointcloud_buffer_size");
+//     configuration.distance_threshold  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.distance_threshold"));
+//     configuration.angle_threshold  = static_cast<float>(*toml_config->get_qualified_as<double>("kinectfusion.angle_threshold"));
+//     auto icp_iterations_values = *toml_config->get_qualified_array_of<int64_t>("kinectfusion.icp_iterations");
+//     configuration.icp_iterations = {icp_iterations_values.begin(), icp_iterations_values.end()};
 
-    return configuration;
-}
+//     return configuration;
+// }
 
-auto make_camera(const std::shared_ptr<cpptoml::table>& toml_config)
-{
-    std::unique_ptr<DepthCamera> camera;
+// auto make_camera(const std::shared_ptr<cpptoml::table>& toml_config)
+// {
+//     // std::unique_ptr<DepthCamera> camera;
 
-    const auto camera_type = *toml_config->get_qualified_as<std::string>("camera.type");
-    if (camera_type == "Pseudo") {
-        std::stringstream source_path {};
-        source_path << data_path << "source/" << recording_name << "/";
-        camera = std::make_unique<PseudoCamera>(source_path.str());
-    } else if (camera_type == "Xtion") {
-        camera = std::make_unique<XtionCamera>();
-    } else if (camera_type == "RealSense") {
-        if(*toml_config->get_qualified_as<bool>("camera.realsense.live")) {
-            camera = std::make_unique<RealSenseCamera>();
-        } else {
-            std::stringstream source_file {};
-            source_file << data_path << "source/" << recording_name << ".bag";
-            camera = std::make_unique<RealSenseCamera>(source_file.str());
-        }
-    } else {
-        throw std::logic_error("There is no implementation for the camera type you specified.");
-    }
+//     // const auto camera_type = *toml_config->get_qualified_as<std::string>("camera.type");
+//     // if (camera_type == "Pseudo") {
+//     //     std::stringstream source_path {};
+//     //     source_path << data_path << "source/" << recording_name << "/";
+//     //     camera = std::make_unique<PseudoCamera>(source_path.str());
+//     // } else if (camera_type == "Xtion") {
+//     //     camera = std::make_unique<XtionCamera>();
+//     // } else if (camera_type == "RealSense") {
+//     //     if(*toml_config->get_qualified_as<bool>("camera.realsense.live")) {
+//     //         camera = std::make_unique<RealSenseCamera>();
+//     //     } else {
+//     //         std::stringstream source_file {};
+//     //         source_file << data_path << "source/" << recording_name << ".bag";
+//     //         camera = std::make_unique<RealSenseCamera>(source_file.str());
+//     //     }
+//     // } else {
+//     //     throw std::logic_error("There is no implementation for the camera type you specified.");
+//     // }
 
-    return camera;
-}
+//     // return camera;
+// }
 
-void main_loop(const std::unique_ptr<DepthCamera> camera, const kinectfusion::GlobalConfiguration& configuration)
-{
-    kinectfusion::Pipeline pipeline { camera->get_parameters(), configuration };
-
+void main_loop(/*const std::unique_ptr<DepthCamera> camera,*/ kinectfusion::CameraParameters cam_params, const kinectfusion::GlobalConfiguration& configuration)
+{   
+    cv::Mat test;
+    kinectfusion::Pipeline pipeline { cam_params, configuration };
+    
     cv::namedWindow("Pipeline Output");
-    for (bool end = false; !end;) {
-        //1 Get frame
-        InputFrame frame = camera->grab_frame();
 
-        //2 Process frame
-        bool success = pipeline.process_frame(frame.depth_map, frame.color_map);
-        if (!success)
-            std::cout << "Frame could not be processed" << std::endl;
+    // ros::NodeHandle n;
 
-        //3 Display the output
-        cv::imshow("Pipeline Output", pipeline.get_last_model_frame());
+    // ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
 
-        switch (cv::waitKey(1)) {
-            case 'a': { // Save all available data
-                std::cout << "Saving all ..." << std::endl;
-                std::cout << "Saving poses ..." << std::endl;
-                auto poses = pipeline.get_poses();
+    // for (bool end = false; !end && ros::ok();) {
+    //     //1 Get frame
+    //     // InputFrame frame = camera->grab_frame();
 
-                for (size_t i = 0; i < poses.size(); ++i) {
-                    std::stringstream file_name {};
-                    file_name << data_path << "poses/" << recording_name << "/seq_pose" << std::setfill('0')
-                              << std::setw(5) << i << ".txt";
-                    std::ofstream { file_name.str() } << poses[i] << std::endl;
-                }
+    //     // //2 Process frame
+    //     // bool success = pipeline.process_frame(frame.depth_map, frame.color_map);
+    //     // if (!success)
+    //     //     std::cout << "Frame could not be processed" << std::endl;
 
-                std::cout << "Extracting mesh ..." << std::endl;
-                auto mesh = pipeline.extract_mesh();
-                std::cout << "Saving mesh ..." << std::endl;
-                std::stringstream file_name {};
-                file_name << data_path << "meshes/" << recording_name << ".ply";
-                kinectfusion::export_ply(file_name.str(), mesh);
-                end = true;
-                break;
-            }
-            case 'p': { // Save poses only
-                std::cout << "Saving poses ..." << std::endl;
-                auto poses = pipeline.get_poses();
+    //     std_msgs::String msg;
 
-                for (size_t i = 0; i < poses.size(); ++i) {
-                    std::stringstream file_name {};
-                    file_name << data_path << "poses/" << recording_name << "/seq_pose" << std::setfill('0')
-                              << std::setw(5) << i << ".txt";
-                    std::ofstream { file_name.str() } << poses[i] << std::endl;
-                }
-                end = true;
-                break;
-            }
-            case 'm': { // Save mesh only
-                std::cout << "Extracting mesh ..." << std::endl;
-                auto mesh = pipeline.extract_mesh();
-                std::cout << "Saving mesh ..." << std::endl;
-                std::stringstream file_name {};
-                file_name << data_path << "meshes/" << recording_name << ".ply";
-                kinectfusion::export_ply(file_name.str(), mesh);
-                end = true;
-                break;
-            }
-            case ' ': // Save nothing
-                end = true;
-                break;
-            default:
-                break;
-        }
-    }
+    //     std::stringstream ss;
+    //     ss << "Kinfu Ran ";
+    //     msg.data = ss.str();
+
+    //     ROS_INFO("%s", msg.data.c_str());
+
+    //     chatter_pub.publish(msg);
+
+    //     ros::spinOnce();
+
+    //     //3 Display the output
+    //     // cv::imshow("Pipeline Output", pipeline.get_last_model_frame());
+
+    //     // switch (cv::waitKey(1)) {
+    //     //     case 'a': { // Save all available data
+    //     //         std::cout << "Saving all ..." << std::endl;
+    //     //         std::cout << "Saving poses ..." << std::endl;
+    //     //         auto poses = pipeline.get_poses();
+
+    //     //         for (size_t i = 0; i < poses.size(); ++i) {
+    //     //             std::stringstream file_name {};
+    //     //             file_name << data_path << "poses/" << recording_name << "/seq_pose" << std::setfill('0')
+    //     //                       << std::setw(5) << i << ".txt";
+    //     //             std::ofstream { file_name.str() } << poses[i] << std::endl;
+    //     //         }
+
+    //     //         std::cout << "Extracting mesh ..." << std::endl;
+    //     //         auto mesh = pipeline.extract_mesh();
+    //     //         std::cout << "Saving mesh ..." << std::endl;
+    //     //         std::stringstream file_name {};
+    //     //         file_name << data_path << "meshes/" << recording_name << ".ply";
+    //     //         kinectfusion::export_ply(file_name.str(), mesh);
+    //     //         end = true;
+    //     //         break;
+    //     //     }
+    //     //     case 'p': { // Save poses only
+    //     //         std::cout << "Saving poses ..." << std::endl;
+    //     //         auto poses = pipeline.get_poses();
+
+    //     //         for (size_t i = 0; i < poses.size(); ++i) {
+    //     //             std::stringstream file_name {};
+    //     //             file_name << data_path << "poses/" << recording_name << "/seq_pose" << std::setfill('0')
+    //     //                       << std::setw(5) << i << ".txt";
+    //     //             std::ofstream { file_name.str() } << poses[i] << std::endl;
+    //     //         }
+    //     //         end = true;
+    //     //         break;
+    //     //     }
+    //     //     case 'm': { // Save mesh only
+    //     //         std::cout << "Extracting mesh ..." << std::endl;
+    //     //         auto mesh = pipeline.extract_mesh();
+    //     //         std::cout << "Saving mesh ..." << std::endl;
+    //     //         std::stringstream file_name {};
+    //     //         file_name << data_path << "meshes/" << recording_name << ".ply";
+    //     //         kinectfusion::export_ply(file_name.str(), mesh);
+    //     //         end = true;
+    //     //         break;
+    //     //     }
+    //     //     case ' ': // Save nothing
+    //     //         end = true;
+    //     //         break;
+    //     //     default:
+    //     //         break;
+    //     // }
+    // }
 }
 
 void setup_cuda_device()
@@ -162,27 +183,32 @@ void setup_cuda_device()
 
 int main(int argc, char* argv[])
 {
+    // ros::init(argc, argv, "kinfu");
     // Parse command line options
-    cxxopts::Options options { "KinectFusionApp",
-                               "Sample application for KinectFusionLib, a modern implementation of the KinectFusion approach"};
-    options.add_options()("c,config", "Configuration filename", cxxopts::value<std::string>());
-    auto program_arguments = options.parse(argc, argv);
-    if (program_arguments.count("config") == 0)
-        throw std::invalid_argument("You have to specify a path to the configuration file");
+    // cxxopts::Options options { "KinectFusionApp",
+    //                            "Sample application for KinectFusionLib, a modern implementation of the KinectFusion approach"};
+    // options.add_options()("c,config", "Configuration filename", cxxopts::value<std::string>());
+    // auto program_arguments = options.parse(argc, argv);
+    // if (program_arguments.count("config") == 0)
+    //     throw std::invalid_argument("You have to specify a path to the configuration file");
 
     // Parse TOML configuration file
-    auto toml_config = cpptoml::parse_file(program_arguments["config"].as<std::string>());
-    data_path = *toml_config->get_as<std::string>("data_path");
-    recording_name = *toml_config->get_as<std::string>("recording_name");
+    // auto toml_config = cpptoml::parse_file("/home/robot/Documents/bachelor_sschupp/ceres_ws/src/kinfu_testing/KinectFusionApp/config.toml");
+    // data_path = *toml_config->get_as<std::string>("data_path");
+    // recording_name = *toml_config->get_as<std::string>("recording_name");
 
     // Print info about available CUDA devices and specify device to use
     setup_cuda_device();
 
     // Start the program's main loop
+    kinectfusion::CameraParameters cam_params;
+    kinectfusion::GlobalConfiguration configuration;
+
     main_loop(
-            make_camera(toml_config),
-            make_configuration(toml_config)
+            // make_camera(toml_config),
+            cam_params,
+            configuration
     );
 
-    return EXIT_SUCCESS;
+    return 0;
 }

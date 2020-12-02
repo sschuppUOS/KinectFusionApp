@@ -6,8 +6,8 @@ recording_name = "woman"
 # Input camera settings
 [camera]
 #type = "Pseudo"
-#type = "Xtion"
-type = "RealSense"
+type = "Xtion"
+#type = "RealSense"
 
 [camera.realsense]
 live = true
